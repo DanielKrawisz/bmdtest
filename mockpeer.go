@@ -83,7 +83,9 @@ func (mock *MockPeer) ReadMessage() (wire.Message, error) {
 	switch t := toSend.(type) {
 	case *wire.MsgGetPubKey, *wire.MsgPubKey, *wire.MsgMsg, *wire.MsgBroadcast, *wire.MsgUnknownObject, *wire.MsgObject:
 		msg, _ := wire.ToMsgObject(t)
+		mock.mutex.Lock()
 		mock.objectData = append(mock.objectData, msg.InventoryHash())
+		mock.mutex.Unlock()
 	}
 
 	return toSend, nil
@@ -227,8 +229,8 @@ func (mock *MockPeer) Done(err error) {
 	mock.mutex.Lock()
 	mock.timer.Stop()
 	mock.interactionComplete = true
-	mock.mutex.Unlock()
 	mock.report <- TestReport{err, mock.objectData}
+	mock.mutex.Unlock()
 }
 
 // Start loads the mock peer's initial action if there is one.
